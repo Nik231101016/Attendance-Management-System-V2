@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AttendX — Dashboard</title>
+    <link rel="stylesheet" href="css/variables.css">
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/layout.css">
+    <link rel="stylesheet" href="css/views.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body class="dashboard-page">
+
+    <div class="app-layout">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-glow"></div>
+
+            <div class="sidebar-header">
+                <div class="sidebar-logo">
+                    <div class="logo-mark"><i class="fa-solid fa-clipboard-check"></i></div>
+                    <div class="logo-text-group">
+                        <span class="logo-text">AttendX</span>
+                        <span class="logo-sub">Management System</span>
+                    </div>
+                </div>
+            </div>
+
+            <nav class="sidebar-nav" id="sidebarNav">
+                <!-- Student Nav -->
+                <div class="nav-group" data-role="student">
+                    <span class="nav-label">Student</span>
+                    <a class="nav-item active" data-view="student-mark" onclick="navigateTo('student-mark')">
+                        <i class="fa-solid fa-user-check"></i><span>Mark Attendance</span>
+                    </a>
+                    <a class="nav-item" data-view="student-history" onclick="navigateTo('student-history')">
+                        <i class="fa-solid fa-clock-rotate-left"></i><span>My History</span>
+                    </a>
+                </div>
+
+                <!-- Admin Nav -->
+                <div class="nav-group" data-role="admin">
+                    <span class="nav-label">Analytics</span>
+                    <a class="nav-item active" data-view="admin-overview" onclick="navigateTo('admin-overview')">
+                        <i class="fa-solid fa-chart-pie"></i><span>Overview</span>
+                    </a>
+                    <span class="nav-label">Manage</span>
+                    <a class="nav-item" data-view="admin-mark" onclick="navigateTo('admin-mark')">
+                        <i class="fa-solid fa-pen-to-square"></i><span>Mark Attendance</span>
+                    </a>
+                    <a class="nav-item" data-view="admin-records" onclick="navigateTo('admin-records')">
+                        <i class="fa-solid fa-table-list"></i><span>Records</span>
+                    </a>
+                    <a class="nav-item" data-view="admin-defaulters" onclick="navigateTo('admin-defaulters')">
+                        <i class="fa-solid fa-triangle-exclamation"></i><span>Defaulters</span>
+                        <span class="nav-badge" id="defaulterBadge">0</span>
+                    </a>
+                </div>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="user-card">
+                    <div class="user-avatar" id="userAvatar">A</div>
+                    <div class="user-info">
+                        <span class="user-name" id="userName">User</span>
+                        <span class="user-role" id="userRole">Role</span>
+                    </div>
+                    <button class="btn-ghost" onclick="logout()" title="Logout">
+                        <i class="fa-solid fa-right-from-bracket"></i>
+                    </button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Mobile Overlay -->
+        <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+        <!-- Main Content -->
+        <div class="main-wrapper">
+            <header class="topbar">
+                <button class="btn-ghost mobile-menu-btn" onclick="toggleSidebar()">
+                    <i class="fa-solid fa-bars"></i>
+                </button>
+                <div class="topbar-left">
+                    <h2 class="topbar-title" id="pageTitle">Mark Attendance</h2>
+                    <p class="topbar-subtitle" id="pageSubtitle">Record your attendance for today</p>
+                </div>
+                <div class="topbar-right">
+                    <span class="topbar-date" id="topbarDate"></span>
+                </div>
+            </header>
+
+            <main class="content" id="mainContent">
+
+                <!-- ========== STUDENT: Mark Attendance ========== -->
+                <section id="view-student-mark" class="view-panel active">
+                    <div class="stats-grid stats-3">
+                        <div class="stat-card">
+                            <div class="stat-icon stat-icon-cyan"><i class="fa-solid fa-calendar-days"></i></div>
+                            <div class="stat-body">
+                                <p class="stat-value" id="stuTotalClasses">0</p>
+                                <p class="stat-label">Total Classes</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon stat-icon-green"><i class="fa-solid fa-circle-check"></i></div>
+                            <div class="stat-body">
+                                <p class="stat-value" id="stuPresentCount">0</p>
+                                <p class="stat-label">Days Present</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon stat-icon-amber"><i class="fa-solid fa-percent"></i></div>
+                            <div class="stat-body">
+                                <p class="stat-value" id="stuAttPct">0%</p>
+                                <p class="stat-label">Attendance Rate</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card card-mark">
+                        <div class="card-mark-inner">
+                            <div class="card-mark-info">
+                                <h3>Mark Your Attendance</h3>
+                                <p class="text-muted">Date: <strong class="text-primary" id="currentDate"></strong></p>
+                                <p class="text-muted text-sm">Click the button below to mark yourself present for today</p>
+                            </div>
+                            <button id="markBtn" onclick="markAttendance()" class="btn btn-primary btn-lg">
+                                <i class="fa-solid fa-check-circle"></i>
+                                <span>Mark Present</span>
+                            </button>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ========== STUDENT: History ========== -->
+                <section id="view-student-history" class="view-panel">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3><i class="fa-solid fa-clock-rotate-left text-muted"></i> My Attendance History</h3>
+                        </div>
+                        <div class="table-wrapper">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Date</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="studentHistoryTable"></tbody>
+                            </table>
+                        </div>
+                        <div class="empty-state hidden" id="studentHistoryEmpty">
+                            <i class="fa-solid fa-inbox"></i>
+                            <p>No attendance records found</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ========== ADMIN: Overview ========== -->
+                <section id="view-admin-overview" class="view-panel active">
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-icon stat-icon-cyan"><i class="fa-solid fa-users"></i></div>
+                            <div class="stat-body">
+                                <p class="stat-value" id="admTotalStudents">0</p>
+                                <p class="stat-label">Total Students</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon stat-icon-green"><i class="fa-solid fa-chart-line"></i></div>
+                            <div class="stat-body">
+                                <p class="stat-value" id="admAvgPct">0%</p>
+                                <p class="stat-label">Average Attendance</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon stat-icon-amber"><i class="fa-solid fa-calendar-check"></i></div>
+                            <div class="stat-body">
+                                <p class="stat-value" id="admTodayPct">0%</p>
+                                <p class="stat-label">Today's Rate</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon stat-icon-red"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                            <div class="stat-body">
+                                <p class="stat-value text-danger" id="admDefaulterCount">0</p>
+                                <p class="stat-label">Defaulters</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="charts-grid">
+                        <div class="card card-chart">
+                            <h3 class="card-title">Attendance Trend</h3>
+                            <div class="chart-container"><canvas id="trendChart"></canvas></div>
+                        </div>
+                        <div class="card card-chart">
+                            <h3 class="card-title">Today's Breakdown</h3>
+                            <div class="chart-container chart-container-square"><canvas id="doughnutChart"></canvas></div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <h3><i class="fa-solid fa-list text-muted"></i> Recent Activity</h3>
+                        </div>
+                        <div class="table-wrapper">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Student</th>
+                                        <th>Roll No</th>
+                                        <th>Class</th>
+                                        <th>Date</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="recentActivityTable"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ========== ADMIN: Mark Attendance ========== -->
+                <section id="view-admin-mark" class="view-panel">
+                    <div class="card card-form">
+                        <h3><i class="fa-solid fa-pen-to-square text-muted"></i> Mark Student Attendance</h3>
+                        <form id="adminMarkForm" onsubmit="adminMarkAttendance(event)">
+                            <div class="form-row">
+                                <div class="input-group">
+                                    <label for="admStudent">Student</label>
+                                    <div class="input-wrapper">
+                                        <i class="fa-solid fa-user input-icon"></i>
+                                        <select id="admStudent" required>
+                                            <option value="">Select student</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="input-group">
+                                    <label for="admDate">Date</label>
+                                    <div class="input-wrapper">
+                                        <i class="fa-solid fa-calendar input-icon"></i>
+                                        <input type="date" id="admDate" required>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="input-group">
+                                <label>Status</label>
+                                <div class="toggle-group">
+                                    <label class="toggle-btn" id="togglePresent">
+                                        <input type="radio" name="admStatus" value="present" checked>
+                                        <i class="fa-solid fa-check"></i> Present
+                                    </label>
+                                    <label class="toggle-btn" id="toggleAbsent">
+                                        <input type="radio" name="admStatus" value="absent">
+                                        <i class="fa-solid fa-xmark"></i> Absent
+                                    </label>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fa-solid fa-paper-plane"></i>
+                                <span>Submit Attendance</span>
+                            </button>
+                        </form>
+                    </div>
+                </section>
+
+                <!-- ========== ADMIN: Records ========== -->
+                <section id="view-admin-records" class="view-panel">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3><i class="fa-solid fa-table-list text-muted"></i> Attendance Records</h3>
+                            <div class="card-actions">
+                                <div class="input-wrapper input-sm">
+                                    <i class="fa-solid fa-magnifying-glass input-icon"></i>
+                                    <input type="text" id="recordSearch" placeholder="Search name or roll..." oninput="renderRecordsTable()">
+                                </div>
+                                <select id="recordClassFilter" onchange="renderRecordsTable()" class="select-sm">
+                                    <option value="all">All Classes</option>
+                                </select>
+                                <button class="btn btn-outline btn-sm" onclick="exportRecordsCSV()">
+                                    <i class="fa-solid fa-file-csv"></i> Export CSV
+                                </button>
+                            </div>
+                        </div>
+                        <div class="table-wrapper">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Student</th>
+                                        <th>Roll No</th>
+                                        <th class="hide-mobile">Class</th>
+                                        <th>Date</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="recordsTable"></tbody>
+                            </table>
+                        </div>
+                        <div class="empty-state hidden" id="recordsEmpty">
+                            <i class="fa-solid fa-inbox"></i>
+                            <p>No records match your filter</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ========== ADMIN: Defaulters ========== -->
+                <section id="view-admin-defaulters" class="view-panel">
+                    <div class="defaulter-summary-grid" id="defaulterSummary"></div>
+                    <div class="card">
+                        <div class="card-header">
+                            <h3><i class="fa-solid fa-triangle-exclamation text-danger"></i> Defaulter List
+                                <span class="badge badge-danger" id="defaulterCountBadge">0</span>
+                            </h3>
+                            <button class="btn btn-outline btn-sm btn-danger-outline" onclick="exportDefaultersCSV()">
+                                <i class="fa-solid fa-file-csv"></i> Export Defaulters
+                            </button>
+                        </div>
+                        <div class="table-wrapper">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Student</th>
+                                        <th>Roll No</th>
+                                        <th class="hide-mobile">Class</th>
+                                        <th>Present / Total</th>
+                                        <th>Attendance</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="defaultersTable"></tbody>
+                            </table>
+                        </div>
+                        <div class="empty-state hidden" id="defaultersEmpty">
+                            <i class="fa-solid fa-shield-check"></i>
+                            <p>All students have 75% or above attendance</p>
+                        </div>
+                    </div>
+                </section>
+
+            </main>
+        </div>
+    </div>
+
+    <!-- Confirm Modal -->
+    <div class="modal-overlay hidden" id="confirmModal">
+        <div class="modal-box">
+            <div class="modal-header">
+                <div class="modal-icon"><i class="fa-solid fa-check-double"></i></div>
+                <h3>Confirm Submission</h3>
+            </div>
+            <div class="modal-body" id="modalBody"></div>
+            <div class="modal-footer">
+                <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+                <button class="btn btn-primary" id="modalConfirmBtn" onclick="confirmModalAction()">Submit</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="toastContainer" class="toast-container"></div>
+
+    <script src="js/utils.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/export.js"></script>
+    <script src="js/dashboard.js"></script>
+    <script src="js/attendance.js"></script>
+    <script src="js/records.js"></script>
+    <script src="js/defaulters.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
